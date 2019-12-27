@@ -97,6 +97,12 @@ class ToolCocotb(MakefileSim):
         cocotb_sim = self.manifest_dict.get('cocotb_sim', '')
         self.writeln("SIM := %s" % cocotb_sim)
 
+        cocotb_stress_level = self.manifest_dict.get('cocotb_stress_level', '4')
+        self.writeln("STRESS_LEVEL := %s" % cocotb_stress_level)
+
+        self.writeln("SIM := %s" % cocotb_sim)
+
+
         self.write("""
 PWD=$(shell pwd)
 
