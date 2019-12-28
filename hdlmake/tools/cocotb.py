@@ -18,6 +18,7 @@ def _check_simulation_manifest(top_manifest):
     if top_manifest.manifest_dict.get("sim_top") is None:
         raise Exception("sim_top variable must be set in the top manifest.")
 
+
 class ToolCocotb(MakefileSim):
 
     """Class providing the interface for Cocotb"""
@@ -47,7 +48,6 @@ class ToolCocotb(MakefileSim):
         self._makefile_sim_compilation()
         self.makefile_close()
 
-
     def _makefile_sim_sources_lang(self, name, klass):
         """Generic method to write the simulation Makefile HDL sources"""
         fileset = self.fileset
@@ -61,7 +61,6 @@ class ToolCocotb(MakefileSim):
                 for src in extra_srcs:
                     self.writeln(src + " \\")
         self.writeln()
-
 
     def __init__(self):
         super(ToolCocotb, self).__init__()
@@ -96,12 +95,6 @@ class ToolCocotb(MakefileSim):
 
         cocotb_sim = self.manifest_dict.get('cocotb_sim', '')
         self.writeln("SIM := %s" % cocotb_sim)
-
-        cocotb_stress_level = self.manifest_dict.get('cocotb_stress_level', '4')
-        self.writeln("STRESS_LEVEL := %s" % cocotb_stress_level)
-
-        self.writeln("SIM := %s" % cocotb_sim)
-
 
         self.write("""
 PWD=$(shell pwd)
