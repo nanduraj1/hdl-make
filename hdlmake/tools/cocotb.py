@@ -3,14 +3,10 @@
 """Module providing support for cocotb"""
 
 from __future__ import absolute_import
-import string
 
 
 from .makefilesim import MakefileSim
-from ..util import shell
-from ..sourcefiles.srcfile import VerilogFile, VHDLFile, SVFile
-from ..util import path as path_mod
-import six
+from ..sourcefiles.srcfile import VerilogFile, SVFile
 
 
 def _check_simulation_manifest(top_manifest):
@@ -29,21 +25,14 @@ class ToolCocotb(MakefileSim):
         'windows_bin': None,
         'linux_bin': 'cocotb-config'}
 
-    STANDARD_LIBS = ['std', 'ieee', 'ieee_proposed', 'vl', 'synopsys']
-
     HDL_FILES = {VerilogFile: '', SVFile: ''}
-
-    CLEAN_TARGETS = {'clean': ["run.command", "ivl_vhdl_work", "work"],
-                     'mrproper': ["*.vcd", "*.vvp"]}
 
     def write_makefile(self, top_manifest, fileset, filename=None):
         """Execute the simulation action"""
         _check_simulation_manifest(top_manifest)
         self.makefile_setup(top_manifest, fileset, filename=filename)
         self.makefile_check_tool('sim_path')
-        self.makefile_includes()
         self._makefile_sim_top()
-        self._makefile_sim_options()
         self._makefile_sim_sources()
         self._makefile_sim_compilation()
         self.makefile_close()
@@ -73,19 +62,6 @@ class ToolCocotb(MakefileSim):
         # The key is the filename, the value is the file source path
         self.copy_rules = {}
 
-    def _makefile_sim_options(self):
-        """Print the vsim options to the Makefile"""
-        def __get_rid_of_vsim_incdirs(vlog_opt=""):
-            """Parse the VLOG options and purge the included dirs"""
-            if not vlog_opt:
-                vlog_opt = ""
-            vlogs = vlog_opt.split(' ')
-            ret = []
-            for vlog_aux in vlogs:
-                if not vlog_aux.startswith("+incdir+"):
-                    ret.append(vlog_aux)
-            return ' '.join(ret)
-
     def _makefile_sim_compilation(self):
         """Write a properly formatted Makefile for the simulator.
         The Makefile format is shared, but flags, dependencies, clean rules,
@@ -94,7 +70,7 @@ class ToolCocotb(MakefileSim):
         self.writeln("TOPLEVEL_LANG=verilog")
 
         cocotb_sim = self.manifest_dict.get('cocotb_sim', '')
-        self.writeln("SIM := %s" % cocotb_sim)
+        self.writeln("SIM ?= %s" % cocotb_sim)
 
         self.write("""
 PWD=$(shell pwd)
@@ -120,7 +96,6 @@ endif
         if extra_args:
             self.writeln("EXTRA_ARGS += {}".format(extra_args))
 
-        fileset = self.fileset
         if self.manifest_dict.get("include_dirs") is not None:
             inc_dirs = self.manifest_dict.get("include_dirs")
             inc_dirs_verilator = ("-I%s" % ' -I'.join(inc_dirs))
