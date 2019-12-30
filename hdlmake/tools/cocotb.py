@@ -101,7 +101,7 @@ endif
 
         extra_args = self.manifest_dict.get('extra_args', None)
         if extra_args:
-            self.writeln("EXTRA_ARGS += {}".format(extra_args))
+            self.writeln("override EXTRA_ARGS += {}".format(extra_args))
 
         if self.manifest_dict.get("include_dirs") is not None:
             inc_dirs = self.manifest_dict.get("include_dirs")
@@ -116,9 +116,9 @@ endif
         self.write("""\n
 ifeq ($(SIM), modelsim)
     ARCH=i686
-    EXTRA_ARGS += {vsim}
+    override EXTRA_ARGS += {vsim}
 else ifeq ($(SIM), verilator)
-    EXTRA_ARGS += {verilator}
+    override EXTRA_ARGS += {verilator}
 endif
 
 include $(shell cocotb-config --makefiles)/Makefile.inc
