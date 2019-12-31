@@ -114,8 +114,7 @@ endif
             inc_dirs_vsim = ''
 
         self.write("""\n
-ifeq ($(SIM), modelsim)
-    ARCH=i686
+ifeq ($(SIM), questa)
     EXTRA_ARGS += {vsim}
 else ifeq ($(SIM), verilator)
     EXTRA_ARGS += {verilator}
