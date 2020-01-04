@@ -36,24 +36,25 @@ class ToolCocotb(MakefileSim):
         _check_simulation_manifest(top_manifest)
         self.makefile_setup(top_manifest, fileset, filename=filename)
         self.makefile_check_tool('sim_path')
-        self._makefile_sim_top()
         self._makefile_sim_options()
-        self._makefile_sim_sources()
+        self.makefile_includes()
+        self._makefile_sim_top()
+        self._makefile_sim_sources(VerilogFile)
         self._makefile_sim_compilation()
         self.makefile_close()
 
-    def _makefile_sim_sources_lang(self, name, klass):
+    def _makefile_sim_sources(self, klass):
         """Generic method to write the simulation Makefile HDL sources"""
+
         fileset = self.fileset
-        self.write("{}_SOURCES += ".format(name))
+        self.write("VERILOG_SOURCES += ")
         for vlog in fileset.filter(klass).sort():
             self.writeln(self._add_wpwd(vlog.rel_path()) + " \\")
 
-        if name == 'VERILOG':
-            extra_srcs = self.manifest_dict.get('extra_srcs', None)
-            if extra_srcs:
-                for src in extra_srcs:
-                    self.writeln(self._add_wpwd(src) + " \\")
+        extra_srcs = self.manifest_dict.get('extra_srcs', None)
+        if extra_srcs:
+            for src in extra_srcs:
+                self.writeln(self._add_wpwd(src) + " \\")
         self.writeln()
 
     def __init__(self):
@@ -88,7 +89,6 @@ endif
 
         cocotb_sim = self.manifest_dict.get('cocotb_sim', '')
         self.writeln("SIM ?= %s" % cocotb_sim)
-
         py_paths = self.manifest_dict.get('py_paths', None)
         py_paths = [self._add_wpwd(path) for path in py_paths]
         if py_paths:
@@ -96,8 +96,12 @@ endif
         else:
             raise Exception("Need proper py_paths in Manifest.py\nGot {}".format(py_paths))
 
-        self.writeln("TOPLEVEL := $(TOP_MODULE)")
-        self.writeln("MODULE := $(TOP_MODULE)")
+        cocotb_verilog_top = self.manifest_dict.get('cocotb_verilog_top', '$(TOP_MODULE)')
+        self.writeln("TOPLEVEL := {}".format(cocotb_verilog_top))
+
+        cocotb_py_top = self.manifest_dict.get('cocotb_py_top', '$(TOP_MODULE)')
+        self.writeln("MODULE := {}".format(cocotb_py_top))
+
         self.writeln("EXTRA_ARGS += $(MORE_ARGS)")
         extra_args = self.manifest_dict.get('extra_args', None)
         if extra_args:
@@ -106,20 +110,13 @@ endif
         if self.manifest_dict.get("include_dirs") is not None:
             inc_dirs = self.manifest_dict.get("include_dirs")
             inc_dirs = [self._add_wpwd(path) for path in inc_dirs]
-            inc_dirs_verilator = ("-I%s" % ' -I'.join(inc_dirs))
-            inc_dirs_vsim = ("+incdir+%s" % ' +incdir+'.join(inc_dirs))
+            inc_dirs = ("+incdir+%s" % ' +incdir+'.join(inc_dirs))
 
         else:
-            inc_dirs_verilator = ''
-            inc_dirs_vsim = ''
+            inc_dirs = ''
 
-        self.write("""\n
-ifeq ($(SIM), questa)
-    EXTRA_ARGS += {vsim}
-else ifeq ($(SIM), verilator)
-    EXTRA_ARGS += {verilator}
-endif
-
+        self.writeln("EXTRA_ARGS += {}\n".format(inc_dirs))
+        self.write("""
 include $(shell cocotb-config --makefiles)/Makefile.inc
 include $(shell cocotb-config --makefiles)/Makefile.sim
-\n""".format(vsim=inc_dirs_vsim, verilator=inc_dirs_verilator))
+\n""")
